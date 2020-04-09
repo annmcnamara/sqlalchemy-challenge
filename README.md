@@ -1,7 +1,7 @@
 # SQLAlchemy Homework - Surfs Up!
 
 ### Files in this Repository
-1.  app.py -- a Jupyter Notebook with the main scripts to run analysis 
+1.   -- a Jupyter Notebook with the main scripts to run analysis 
 
 #### Background
 

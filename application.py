@@ -13,6 +13,8 @@ from flask import Flask, jsonify
 import datetime as dt
 from datetime import timedelta
 
+import pandas as pd
+
 #################################################
 # Database Setup
 #################################################
@@ -32,7 +34,6 @@ Station     = Base.classes.station;
 #################################################
 app = Flask(__name__)
 
-
 #################################################
 # Flask Routes
 #################################################
@@ -49,10 +50,9 @@ def welcome():
             f"/api/v1.0/(start, end)"
             )
 
-
 #precipitation
 #Convert the query results to a dictionary
-#using date as the key and prcp as the value.
+# using date as the key and prcp as the value.
 # Return the JSON representation of your dictionary.
 
 @app.route("/api/v1.0/prcp")
@@ -60,16 +60,15 @@ def prcp():
     # Create our session (link) from Python to the DB
     session = Session(engine)
 
-    """Return a list of all passenger names"""
+    """Return a list of all precipitation data"""
     # Query all passengers
     results = session.query(Measurement.date, Measurement.prcp).all()
 
     session.close()
-
     
     # Convert list of tuples into normal list
     # all_names = list(np.ravel(results))
-
+    # Create a dictionary from the row data and append to a list of all_prcp
     all_prcp = []
     for date, prcp in results:
         prcp_dict = {}
@@ -86,13 +85,13 @@ def stations():
     # Create our session (link) from Python to the DB
     session = Session(engine)
 
-    """Return a list of passenger data including the name, age, and sex of each passenger"""
+    """Return a list of stations data including the name, latitude, longitude of each station"""
     # Query all passengers
     results = session.query(Station.name, Station.latitude, Station.longitude).all()
 
     session.close()
 
-    # Create a dictionary from the row data and append to a list of all_passengers
+    # Create a dictionary from the row data and append to a list of all_stations
     all_stations = []
     for name, age, sex in results:
         station_dict = {}
@@ -108,7 +107,8 @@ def stations():
 def temperature_obs():
     session = Session(engine)
 
-    """Return a list of passenger data including the name, age, and sex of each passenger"""
+    """Return a list of tobs (temperature observation) data for the most active station
+        for the last year of data available. """
 #    Query the dates and temperature observations of the most active station
 #    for the last year of data.
     max_date = session.query(func.max(Measurement.date)).first()
@@ -150,54 +150,81 @@ def temperature_obs():
 
 @app.route("/api/v1.0/<start>")
 def get_temperatures_s(start):
-    end=""
+    # calculate TMIN, TAVG, and TMAX for all dates greater than and equal to the start date
     # Create our session (link) from Python to the DB
     session = Session(engine)
     
-    """Return a list of passenger data including the name, age, and sex of each passenger"""
+    """Return TMIN, TAVG, and TMAX for all dates greater than and equal to the start date"""
     # Query all temperatures
     results = session.query(Measurement.date, Measurement.prcp, Measurement.tobs,)\
             .filter(and_(Measurement.date >= start))
-
+    
+    max_date = session.query(func.max(Measurement.date)).first()
+    last_date = dt.datetime.strptime(max_date[0], '%Y-%m-%d')
     session.close()
-# Create a dictionary from the row data and append to a list of all_passengers
-    all_temperatures = []
-    for d, p, t in results:
-        temperature_dict = {}
-        temperature_dict["Date"] = d
-        temperature_dict["Precipitation"] = p
-        temperature_dict["Temperature_Observed"] = t
-        all_temperatures.append(temperature_dict)
 
-    return jsonify(all_temperatures)
+    # Set the start and end date
+    start_date = pd.to_datetime(start)
+    end_date   = pd.to_datetime(last_date)
 
+    #Use the start and end date to create a range of dates
+    range_of_dates = pd.date_range(start=start_date, end=end_date)
+    #range_of_dates
+
+    # Strip off the year and create a list of %m-%d strings
+    dates_list = []
+    for r in range_of_dates:
+    #print(r.strftime("%m-%d"))
+        dates_list.append([r.strftime("%m-%d"), r.strftime("%Y-%m-%d")])
+
+    # Loop through the list of %m-%d strings and calculate the normals for each date
+    normals = []
+    for day, date in dates_list:
+        dn = daily_normals(day)
+        normals.append([date, dn[0][0], dn[0][1], dn[0][2]])
+
+    return jsonify(normals)
 
 
 @app.route("/api/v1.0/<start>/<end>")
 def get_temperatures(start, end=""):
-  # Create our session (link) from Python to the DB
+    # calculate TMIN, TAVG, and TMAX for all dates greater than and equal to the start date
+    # And less than and equal to the end date
+    # Create our session (link) from Python to the DB
     session = Session(engine)
-           
-    """Return a list of passenger data including the name, age, and sex of each passenger"""
+    
+    """Return TMIN, TAVG, and TMAX for all dates greater than and equal to the start date
+       and less than and equal to the end date"""
     # Query all temperatures
-    if end=="":
-            results = session.query(Measurement.date, Measurement.prcp, Measurement.tobs,)\
-           .filter(and_(Measurement.date >= start))
-    else:
-            results = session.query(Measurement.date, Measurement.prcp, Measurement.tobs,)\
-           .filter(and_(Measurement.date >= start, Measurement.date <= end))
-           
+    results = session.query(Measurement.date, Measurement.prcp, Measurement.tobs,)\
+        .filter(and_(Measurement.date >= start))
+    
+    max_date = session.query(func.max(Measurement.date)).first()
+    last_date = dt.datetime.strptime(max_date[0], '%Y-%m-%d')
     session.close()
-           # Create a dictionary from the row data and append to a list of all_passengers
-    all_temperatures = []
-    for d, p, t in results:
-           temperature_dict = {}
-           temperature_dict["Date"] = d
-           temperature_dict["Precipitation"] = p
-           temperature_dict["Temperature_Observed"] = t
-           all_temperatures.append(temperature_dict)
-           
-    return jsonify(all_temperatures)
+
+    # Set the start and end date
+    start_date = pd.to_datetime(start)
+    end_date   = pd.to_datetime(end)
+    
+    #Use the start and end date to create a range of dates
+    range_of_dates = pd.date_range(start=start_date, end=end_date)
+    #range_of_dates
+    
+    # Strip off the year and create a list of %m-%d strings
+    dates_list = []
+    for r in range_of_dates:
+        #print(r.strftime("%m-%d"))
+        dates_list.append([r.strftime("%m-%d"), r.strftime("%Y-%m-%d")])
+    
+    # Loop through the list of %m-%d strings and calculate the normals for each date
+    normals = []
+    for day, date in dates_list:
+        dn = daily_normals(day)
+        normals.append([date, dn[0][0], dn[0][1], dn[0][2]])
+    
+    return jsonify(normals)
+
     
 # Create a query that will calculate the daily normals
 # (i.e. the averages for tmin, tmax, and tavg for all historic data matching a specific month and day)
@@ -211,12 +238,12 @@ def daily_normals(date):
         A list of tuples containing the daily normals, tmin, tavg, and tmax
         
         """
-    
+    session = Session(engine)
     sel = [func.min(Measurement.tobs), func.avg(Measurement.tobs), func.max(Measurement.tobs)]
     return session.query(*sel).filter(func.strftime("%m-%d", Measurement.date) == date).all()
+    session.close()
 
 #daily_normals("01-01")
-
 
 
 if __name__ == '__main__':
