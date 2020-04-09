@@ -3,13 +3,15 @@ import numpy as np
 import sqlalchemy
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import Session
-from sqlalchemy import create_engine, func
+from sqlalchemy import create_engine, func, desc
 
 from sqlalchemy import and_
 from sqlalchemy import or_
 
 from flask import Flask, jsonify
 
+import datetime as dt
+from datetime import timedelta
 
 #################################################
 # Database Setup
@@ -42,6 +44,7 @@ def welcome():
             f"Available Routes:<br>"
             f"/api/v1.0/prcp<br>"
             f"/api/v1.0/stations<br>"
+            f"/api/v1.0/tobs<br>"
             f"/api/v1.0/(start)<br>"
             f"/api/v1.0/(start, end)"
             )
@@ -100,6 +103,51 @@ def stations():
 
     return jsonify(all_stations)
 
+
+@app.route("/api/v1.0/tobs")
+def temperature_obs():
+    session = Session(engine)
+
+    """Return a list of passenger data including the name, age, and sex of each passenger"""
+#    Query the dates and temperature observations of the most active station
+#    for the last year of data.
+    max_date = session.query(func.max(Measurement.date)).first()
+    last_date = dt.datetime.strptime(max_date[0], '%Y-%m-%d')
+    one_year_before = last_date - timedelta(days=365)
+
+# Convert the DATE types back to strings
+    last_date_str       = last_date.strftime("%Y-%m-%d")
+    one_year_before_str = one_year_before.strftime("%Y-%m-%d")
+    
+    # Create our session (link) from Python to the DB
+    
+    # Most Active Station
+    most_active_stations = session.query(Station.name, Measurement.station, func.count(Measurement.station))\
+        .group_by(Measurement.station).order_by(desc(func.count(Measurement.station)))\
+        .filter(Measurement.station == Station.station)
+
+    most_active_station = (most_active_stations[0][1])
+
+    results = session.query(Measurement.station, Measurement.tobs, Measurement.date)\
+        .filter(Measurement.station == most_active_station) \
+        .filter(and_(Measurement.date >= one_year_before_str, \
+                     Measurement.date <= last_date_str))
+
+    session.close()
+
+
+# Create a dictionary from the row data and append to a list of all_passengers
+    all_temperatures = []
+    for d, p, t in results:
+        temperature_dict = {}
+        temperature_dict["Date"] = t
+        temperature_dict["Station"] = d
+        temperature_dict["Temperature_Observed"] = p
+        all_temperatures.append(temperature_dict)
+# Return a JSON list of temperature observations (TOBS) for the previous year.
+    return jsonify(all_temperatures)
+
+
 @app.route("/api/v1.0/<start>")
 def get_temperatures_s(start):
     end=""
@@ -108,12 +156,8 @@ def get_temperatures_s(start):
     
     """Return a list of passenger data including the name, age, and sex of each passenger"""
     # Query all temperatures
-    if end=="":
-        results = session.query(Measurement.date, Measurement.prcp, Measurement.tobs,)\
+    results = session.query(Measurement.date, Measurement.prcp, Measurement.tobs,)\
             .filter(and_(Measurement.date >= start))
-    else:
-        results = session.query(Measurement.date, Measurement.prcp, Measurement.tobs,)\
-            .filter(and_(Measurement.date >= start, Measurement.date <= end))
 
     session.close()
 # Create a dictionary from the row data and append to a list of all_passengers
@@ -126,6 +170,7 @@ def get_temperatures_s(start):
         all_temperatures.append(temperature_dict)
 
     return jsonify(all_temperatures)
+
 
 
 @app.route("/api/v1.0/<start>/<end>")
