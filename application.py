@@ -135,14 +135,14 @@ def temperature_obs():
 
     session.close()
 
-
 # Create a dictionary from the row data and append to a list of all_passengers
     all_temperatures = []
-    for d, p, t in results:
+    for station, tobs, date in results:
         temperature_dict = {}
-        temperature_dict["Date"] = t
-        temperature_dict["Station"] = d
-        temperature_dict["Temperature_Observed"] = p
+        temperature_dict["Date"] = date
+        #Check during Development
+        #temperature_dict["Station"] = station
+        temperature_dict["Temperature_Observed"] = tobs
         all_temperatures.append(temperature_dict)
 # Return a JSON list of temperature observations (TOBS) for the previous year.
     return jsonify(all_temperatures)
