@@ -4,7 +4,7 @@ import sqlalchemy
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import Session
 from sqlalchemy import create_engine, func, desc
-
+# Need _and and _or for queries
 from sqlalchemy import and_
 from sqlalchemy import or_
 
@@ -18,7 +18,6 @@ import pandas as pd
 #################################################
 # Database Setup
 #################################################
-#engine = create_engine("sqlite:///titanic.sqlite")
 engine = create_engine("sqlite:///Resources/hawaii.sqlite")
 # reflect an existing database into a new model
 Base = automap_base()
@@ -61,14 +60,12 @@ def prcp():
     session = Session(engine)
 
     """Return a list of all precipitation data"""
-    # Query all passengers
+    # Query all observations
     results = session.query(Measurement.date, Measurement.prcp).all()
 
     session.close()
     
-    # Convert list of tuples into normal list
-    # all_names = list(np.ravel(results))
-    # Create a dictionary from the row data and append to a list of all_prcp
+    # Create a list from date and prcp data and append to a list of all_prcp
     all_prcp = []
     for date, prcp in results:
         prcp_dict = {}
@@ -85,19 +82,23 @@ def stations():
     # Create our session (link) from Python to the DB
     session = Session(engine)
 
-    """Return a list of stations data including the name, latitude, longitude of each station"""
-    # Query all passengers
-    results = session.query(Station.name, Station.latitude, Station.longitude).all()
+    """Return a list of stations data including the id, station, name, latitude, longitude and elevation of each station"""
+    'id', 'station', 'name', 'latitude', 'longitude', 'elevation',
+    # Query all stations
+    results = session.query(Station.id, Station.station, Station.name, Station.latitude, Station.longitude, Station.elevation).all()
 
     session.close()
 
     # Create a dictionary from the row data and append to a list of all_stations
     all_stations = []
-    for name, age, sex in results:
+    for s_id, station, name, lat, lon, elevation in results:
         station_dict = {}
-        station_dict["name"] = name
-        station_dict["latitude"] = age
-        station_dict["longitude"] = sex
+        station_dict["id"]        = s_id
+        station_dict["station"]   = station
+        station_dict["name"]      = name
+        station_dict["latitude"]  = lat
+        station_dict["longitude"] = lon
+        station_dict["elevation"] = elevation
         all_stations.append(station_dict)
 
     return jsonify(all_stations)
@@ -135,7 +136,7 @@ def temperature_obs():
 
     session.close()
 
-# Create a dictionary from the row data and append to a list of all_passengers
+    # Create a dictionary from the row data and append to a list of all_temperatures
     all_temperatures = []
     for station, tobs, date in results:
         temperature_dict = {}
@@ -144,23 +145,21 @@ def temperature_obs():
         #temperature_dict["Station"] = station
         temperature_dict["Temperature_Observed"] = tobs
         all_temperatures.append(temperature_dict)
-# Return a JSON list of temperature observations (TOBS) for the previous year.
+    # Return a JSON list of temperature observations (TOBS) for the previous year.
     return jsonify(all_temperatures)
 
 
 @app.route("/api/v1.0/<start>")
 def get_temperatures_s(start):
     # calculate TMIN, TAVG, and TMAX for all dates greater than and equal to the start date
-    # Create our session (link) from Python to the DB
+    # Create our session (link) from Python to the DB so we can grab last data point date
     session = Session(engine)
     
     """Return TMIN, TAVG, and TMAX for all dates greater than and equal to the start date"""
-    # Query all temperatures
-    results = session.query(Measurement.date, Measurement.prcp, Measurement.tobs,)\
-            .filter(and_(Measurement.date >= start))
-    
-    max_date = session.query(func.max(Measurement.date)).first()
+    # Get the last data point
+    max_date  = session.query(func.max(Measurement.date)).first()
     last_date = dt.datetime.strptime(max_date[0], '%Y-%m-%d')
+    
     session.close()
 
     # Set the start and end date
@@ -190,19 +189,7 @@ def get_temperatures_s(start):
 def get_temperatures(start, end=""):
     # calculate TMIN, TAVG, and TMAX for all dates greater than and equal to the start date
     # And less than and equal to the end date
-    # Create our session (link) from Python to the DB
-    session = Session(engine)
     
-    """Return TMIN, TAVG, and TMAX for all dates greater than and equal to the start date
-       and less than and equal to the end date"""
-    # Query all temperatures
-    results = session.query(Measurement.date, Measurement.prcp, Measurement.tobs,)\
-        .filter(and_(Measurement.date >= start))
-    
-    max_date = session.query(func.max(Measurement.date)).first()
-    last_date = dt.datetime.strptime(max_date[0], '%Y-%m-%d')
-    session.close()
-
     # Set the start and end date
     start_date = pd.to_datetime(start)
     end_date   = pd.to_datetime(end)
