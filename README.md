@@ -1,9 +1,10 @@
 # SQLAlchemy Homework - Surfs Up!
 
 ### Files in this Repository
-1. climate_starter.ipynb -- a Jupyter Notebook with the main scripts to run analysis 
-2. application.py ( and requirements.txt) -- a flask application to pull data from the db into json
+1. climate_analysis.ipynb -- a Jupyter Notebook with the main scripts to run analysis 
+2. app.py ( and requirements.txt) -- a flask application to pull data from the db into json
 3. README.md -- this file
+4. requirements.txt -- holds required installations
 
 #### Directories in this Repository
 1. Images -- holds images from this readme and also plots from analysis
@@ -11,24 +12,25 @@
 
 #### Background
 
-This repository explorse some climate analysis on a vacation area (Honolulu). The following outlines the project capabilities
+This repository explores some climate analysis in a vacation area (Hawaii). 
+The following outlines the project capabilities
 
 ## Step 1 - Climate Analysis and Exploration
 
 Python and SQLAlchemy were used to do basic climate analysis and data exploration of a provided climate database. All of the following analysis was completed using SQLAlchemy ORM queries, Pandas, and Matplotlib.
 
-*  The provided [starter notebook](climate_starter.ipynb) and [hawaii.sqlite](Resources/hawaii.sqlite) files were used to complete  climate analysis and data exploration.
+*  The provided [starter notebook](climate_starter.ipynb) and [hawaii.sqlite](Resources/hawaii.sqlite) files were used to complete climate analysis and data exploration.
 
-* A start date, 2017-07-23, and end date were selected for a trip. Vacation range is approximately 3-15 days total.
+* A start date and end date were selected for a trip. Vacation range is approximately 3-15 days total.
 
-* SQLAlchemy `create_engine` was used  to connect to your sqlite database.
+* SQLAlchemy `create_engine` was used  to connect to an sqlite database.
 
-*  SQLAlchemy `automap_base()`  was used to reflect your tables into classes and save a reference to those classes called `Station` and `Measurement`.
+*  SQLAlchemy `automap_base()`  was used to reflect tables into classes and save a reference to those classes called `Station` and `Measurement`.
 
 ### Precipitation Analysis
 This analsysis includes 
 * A query to retrieve the last 12 months of precipitation data.
-
+  
 * Selecting  only the `date` and `prcp` values.
 
 * Loading the query results into a Pandas DataFrame and set the index to the date column.
@@ -102,7 +104,7 @@ A Flask API was developed based on the queries desribed above using the followin
 
 ## Notes
 
-*  It is  necessary to join the station and measurement tables for some of the queries.
+*  It was necessary to join the station and measurement tables for some of the queries.
 
 *  Flask `jsonify` was used to convert  API data into a valid JSON response object.
 
@@ -110,45 +112,45 @@ A Flask API was developed based on the queries desribed above using the followin
 
 ## Bonus: Other Recommended Analyses
 
-* The following  optional challenge queries were completed
+* The following optional challenge queries were completed
 
 ### Temperature Analysis I
 
-* Hawaii is reputed to enjoy mild weather all year. Is there a meaningful difference between the temperature in, for example, June and December?
+* Hawaii is reputed to enjoy mild weather all year. A box plot and subsequent t-text comparison was used to check fi there is there a meaningful difference between the temperature in, for example, June and December?
 
-* You may either use SQLAlchemy or pandas's `read_csv()` to perform this portion.
+* SQLAlchemy was used to perform this portion.
 
-* Identify the average temperature in June at all stations across all available years in the dataset. Do the same for December temperature.
+* Identify the average temperature in June at all stations across all available years in the dataset. The same was done for December temperature.
 
-* Use the t-test to determine whether the difference in the means, if any, is statistically significant. Will you use a paired t-test, or an unpaired t-test? Why?
+* Use the t-test to determine whether the difference in the means, if any, is statistically significant. An unpaired t-test (also known as an independent t-test) was used.  An unpaired t-test is a statistical procedure that compares the averages/means of two independent or unrelated groups to determine if there is a significant difference between the two
 
 ### Temperature Analysis II
 
-* The starter notebook contains a function called `calc_temps` that will accept a start date and end date in the format `%Y-%m-%d`. The function will return the minimum, average, and maximum temperatures for that range of dates.
+* A function called `calc_temps` was provided that will accept a start date and end date in the format `%Y-%m-%d`. The function will return the minimum, average, and maximum temperatures for that range of dates.
 
-* Use the `calc_temps` function to calculate the min, avg, and max temperatures for your trip using the matching dates from the previous year (i.e., use "2017-01-01" if your trip start date was "2018-01-01").
+* The`calc_temps` function is used to calculate the min, avg, and max temperatures for chosen trip dates using the matching dates from the previous year (i.e., use "2017-01-01" if your trip start date was "2018-01-01").
 
-* Plot the min, avg, and max temperature from your previous query as a bar chart.
+* The min, avg, and max temperature from the previous query are plotted as a bar chart.
 
-  * Use the average temperature as the bar height.
+  * The average temperature is used as the bar height.
 
-  * Use the peak-to-peak (TMAX-TMIN) value as the y error bar (YERR).
+  * The peak-to-peak (TMAX-TMIN) value is used as the y error bar (YERR).
 
     ![temperature](Images/temperature.png)
 
 ### Daily Rainfall Average
 
-* Calculate the rainfall per weather station using the previous year's matching dates.
+* Calculate the rainfall per weather station using the previous year's matching dates is calculated.
 
 * Calculate the daily normals. Normals are the averages for the min, avg, and max temperatures.
 
-* You are provided with a function called `daily_normals` that will calculate the daily normals for a specific date. This date string will be in the format `%m-%d`. Be sure to use all historic TOBS that match that date string.
+* Afunction called `daily_normals` that will calculate the daily normals for a specific date is provided. This date string will be in the format `%m-%d`. All historic TOBS that match that date string are used.
 
-* Create a list of dates for your trip in the format `%m-%d`. Use the `daily_normals` function to calculate the normals for each date string and append the results to a list.
+*  A list of  of dates was created for the chosen trip in the format `%m-%d`. The `daily_normals` function calculates the normals for each date string and appends  the results to a list.
 
-* Load the list of daily normals into a Pandas DataFrame and set the index equal to the date.
+* The list of daily normals was loaded into a Pandas DataFrame and  the index was set equal to the date.
 
-* Use Pandas to plot an area plot (`stacked=False`) for the daily normals.
+* Pandas was used to plot an area plot (`stacked=False`) for the daily normals.
 
   ![daily-normals](Images/daily-normals.png)
 
